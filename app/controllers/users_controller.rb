@@ -1,4 +1,14 @@
 class UsersController < ApplicationController
+  before_action :authenticate_user, except: [:index, :show, :create]
+
+  def with_password
+    params.permit(:name, :image, :email, :password, :password_confirmation)
+  end
+
+  def without_password
+    params.permit(:name, :image, :email)
+  end
+
   def index
     @users = User.all
     render :index
@@ -26,16 +36,15 @@ class UsersController < ApplicationController
 
   def update
     @user = User.find_by(id: params[:id])
-    if @user.update(
-      name: params[:name] || @user.name,
-      image: params[:image] || @user.image,
-      email: params[:email] || @user.email,
-      password: params[:password] || @user.password_digest,
-      password_confirmation: params[:password_confirmation] || @user.password_confirmation
-    )
+    if current_user.id == @user.id
+      if params[:password].present?
+        @user.update(with_password)
+      else
+        @user.update(without_password)
+      end
       render :show
     else
-      render json: { errors: @user.errors.full_messages }, status: :unprocessable_entity
+      render json: { errors: "You are not authorized to perform this action" }, status: :unauthorized
     end
   end
 
