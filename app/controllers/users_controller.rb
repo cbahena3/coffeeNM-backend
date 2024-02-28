@@ -17,6 +17,32 @@ class UsersController < ApplicationController
       password: params[:password],
       password_confirmation: params[:password_confirmation]
     )
-    render :show
+    if @user.valid?
+      render :show, status: :created
+    else
+      render json: { errors: @user.errors.full_messages }, status: :unprocessable_entity
+    end
   end
+
+  def update
+    @user = User.find_by(id: params[:id])
+    if @user.update(
+      name: params[:name] || @user.name,
+      image: params[:image] || @user.image,
+      email: params[:email] || @user.email,
+      password: params[:password] || @user.password_digest,
+      password_confirmation: params[:password_confirmation] || @user.password_confirmation
+    )
+      render :show
+    else
+      render json: { errors: @user.errors.full_messages }, status: :unprocessable_entity
+    end
+  end
+
+  def destroy
+    @user = User.find_by(id: params[:id])
+    @user.destroy
+    render json:{message: "User deleted"}
+  end
+
 end
